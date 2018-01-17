@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"sort"
 	"strings"
 )
 
@@ -31,26 +30,32 @@ func main() {
 	}
 
 	issuesByType := splitIssuesByType(app.Issues())
-	if printIssues(bugFix, issuesByType[bugFix]) {
+	if printIssues(bugFix, issuesByType[bugFix], config.withReleaseNotes, config.withTesting) {
 		fmt.Println("")
 	}
-	if printIssues(feature, issuesByType[feature]) {
+	if printIssues(feature, issuesByType[feature], config.withReleaseNotes, config.withTesting) {
 		fmt.Println("")
 	}
-	printIssues(other, issuesByType[other])
+	printIssues(other, issuesByType[other], config.withReleaseNotes, config.withTesting)
 }
 
-func printIssues(issueType string, issues []Issue) bool {
+func printIssues(issueType string, issues []Issue, withReleaseNotes, withTesting bool) bool {
 	if len(issues) == 0 {
 		return false
 	}
 
-	fmt.Printf("## %s\n", strings.ToUpper(typeToText[issueType]))
-
-	sort.Sort(IssuesByAuthor(issues))
+	fmt.Printf("<h2>%s</h2>\n", strings.ToUpper(typeToText[issueType]))
 	for _, issue := range issues {
-		fmt.Printf(" * %s [#%s](%s)\n    * Author: %s\n    * Repo: %s\n    * Release Notes: %s\n",
-			issue.Title, issue.Num, issue.URL, issue.Author, issue.Repo, strings.Replace(issue.ReleaseNotes, "\n", "\n      ", -1))
+		releaseNotes := ""
+		if withReleaseNotes && issue.ReleaseNotes != "" {
+			releaseNotes = "<i>Release Notes:</i><br/><pre>" + issue.ReleaseNotes + "</pre><br/>"
+		}
+		testing := ""
+		if withTesting && issue.Testing != "" {
+			testing = "<i>Testing:</i><br/><pre>" + issue.Testing + "</pre><br/>"
+		}
+		fmt.Printf("<b>%s</b><br/><a href=\"%s\">#%s</a>&nbsp;-&nbsp;%s<br/>%s%s<br/>\n",
+			issue.Title, issue.URL, issue.Num, issue.Author, releaseNotes, testing)
 	}
 
 	return true
@@ -112,4 +117,5 @@ type Issue struct {
 	Labels       []string
 	URL          string
 	ReleaseNotes string
+	Testing      string
 }

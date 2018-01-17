@@ -14,7 +14,9 @@ type Config struct {
 	repos    string
 	username string
 
-	useCommits bool
+	useCommits       bool
+	withReleaseNotes bool
+	withTesting      bool
 }
 
 func parseFlags() (config Config) {
@@ -36,6 +38,8 @@ func parseFlags() (config Config) {
 			synthetic
 		`), " "), "github repo names")
 	flag.BoolVar(&config.useCommits, "commits", false, "use commits instead of issues")
+	flag.BoolVar(&config.withTesting, "with-testing", false, "include testing sections")
+	flag.BoolVar(&config.withReleaseNotes, "with-release-notes", true, "include release notes sections")
 	flag.Parse()
 
 	if config.username == "" || config.password == "" || config.base == "" {

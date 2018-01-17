@@ -57,6 +57,7 @@ func (i Item) toIssue(repo string) Issue {
 		Title:        i.Title,
 		Labels:       labels,
 		ReleaseNotes: strings.TrimSpace(getReleaseNotes(i.Body)),
+		Testing:      strings.TrimSpace(getTesting(i.Body)),
 	}
 }
 
@@ -109,12 +110,23 @@ func releaseToTimestamp(release string) string {
 }
 
 func getReleaseNotes(description string) string {
-	const notesRegexp = "(?:##+\\s*|\\*\\*)(?i:release\\s*notes)\\**[\\r\\n]+((?s:.)*?)(?:\\z|\\*\\*|##+)"
+	const notesRegexp = "(?:##+\\s*|\\*\\*)(?i:release\\s*notes)\\**[\\r\\n]+((?s:.)*?)(?:\\z|\\*\\*|##+|JIRA: \\[)"
 	re := regexp.MustCompile(notesRegexp)
 	matches := re.FindStringSubmatch(description)
 	if len(matches) < 2 {
 		return ""
 	}
 
-	return strings.TrimRight(strings.Replace(matches[1], "\r", "", -1), "\n\r ")
+	return strings.TrimSpace(strings.TrimRight(strings.Replace(matches[1], "\r", "", -1), "\n\r "))
+}
+
+func getTesting(description string) string {
+	const notesRegexp = "(?:##+\\s*|\\*\\*)(?i:testing)\\**[\\r\\n]+((?s:.)*?)(?:\\z|\\*\\*|##+|JIRA: \\[)"
+	re := regexp.MustCompile(notesRegexp)
+	matches := re.FindStringSubmatch(description)
+	if len(matches) < 2 {
+		return ""
+	}
+
+	return strings.TrimSpace(strings.TrimRight(strings.Replace(matches[1], "\r", "", -1), "\n\r "))
 }
