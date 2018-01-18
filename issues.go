@@ -44,7 +44,7 @@ type Item struct {
 	} `json:"labels"`
 }
 
-func (i Item) toIssue(repo string) Issue {
+func (i Item) toIssue(repo string, isHotfix bool) Issue {
 	var labels []string
 	for _, label := range i.Labels {
 		labels = append(labels, label.Name)
@@ -58,6 +58,7 @@ func (i Item) toIssue(repo string) Issue {
 		Labels:       labels,
 		ReleaseNotes: strings.TrimSpace(getReleaseNotes(i.Body)),
 		Testing:      strings.TrimSpace(getTesting(i.Body)),
+		IsHotfix:     isHotfix,
 	}
 }
 
@@ -77,21 +78,23 @@ func (app IssuesApp) repoIssues(repo string) []Issue {
 	since := releaseToTimestamp(app.config.base)
 	until := releaseToTimestamp(app.config.head)
 
-	url := fmt.Sprintf("search/issues?q=repo:sagansystems/%s+is:merged+closed:%s..%s+no:milestone", repo, since, until)
+	url := fmt.Sprintf("search/issues?q=repo:sagansystems/%s+is:merged+closed:%s..%s+base:master", repo, since, until)
 	if err := app.github.Get(url, &res); err != nil {
-		fmt.Printf("error fetching issues without milestones: %v", err)
+		fmt.Printf("error fetching issues merged into master: %v", err)
 		os.Exit(1)
 	}
 
-	url = fmt.Sprintf("search/issues?q=repo:sagansystems/%s+is:merged+milestone:%s", repo, app.config.head)
+	url = fmt.Sprintf("search/issues?q=repo:sagansystems/%s+is:merged+base:%s", repo, app.config.head)
 	if err := app.github.Get(url, &res2); err != nil {
-		fmt.Printf("error fetching issues with milestones: %v", err)
+		fmt.Printf("error fetching issues merged into release branch [%s]: %v", app.config.head, err)
 		os.Exit(1)
 	}
-	res.Items = append(res.Items, res2.Items...)
 
 	for _, item := range res.Items {
-		issues = append(issues, item.toIssue(repo))
+		issues = append(issues, item.toIssue(repo, false))
+	}
+	for _, item := range res2.Items {
+		issues = append(issues, item.toIssue(repo, true))
 	}
 
 	return issues
