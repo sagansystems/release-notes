@@ -29,7 +29,8 @@ func main() {
 		app = NewIssuesApp(config, github)
 	}
 
-	issuesByType := splitIssuesByType(app.Issues())
+	filteredIssues := filterIssues(app.Issues(), config.hotfixOnly)
+	issuesByType := splitIssuesByType(filteredIssues)
 	if printIssues(bugFix, issuesByType[bugFix], config.withReleaseNotes, config.withTesting) {
 		fmt.Println("")
 	}
@@ -54,11 +55,28 @@ func printIssues(issueType string, issues []Issue, withReleaseNotes, withTesting
 		if withTesting && issue.Testing != "" {
 			testing = "<i>Testing:</i><br/><pre>" + issue.Testing + "</pre><br/>"
 		}
-		fmt.Printf("<b>%s</b><br/><a href=\"%s\">#%s</a>&nbsp;-&nbsp;%s<br/>%s%s<br/>\n",
-			issue.Title, issue.URL, issue.Num, issue.Author, releaseNotes, testing)
+		hotfix := ""
+		if issue.IsHotfix {
+			hotfix = "HOTFIX: "
+		}
+
+		fmt.Printf("<b>%s%s</b><br/><a href=\"%s\">#%s</a>&nbsp;-&nbsp;%s<br/>%s%s<br/>\n",
+			hotfix, issue.Title, issue.URL, issue.Num, issue.Author, releaseNotes, testing)
 	}
 
 	return true
+}
+
+func filterIssues(issues []Issue, hotfixOnly bool) []Issue {
+	var filteredIssues []Issue
+
+	for _, issue := range issues {
+		if !hotfixOnly || issue.IsHotfix {
+			filteredIssues = append(filteredIssues, issue)
+		}
+	}
+
+	return filteredIssues
 }
 
 func splitIssuesByType(issues []Issue) map[string][]Issue {
@@ -118,4 +136,5 @@ type Issue struct {
 	URL          string
 	ReleaseNotes string
 	Testing      string
+	IsHotfix     bool
 }

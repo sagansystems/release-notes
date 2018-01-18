@@ -14,6 +14,7 @@ type Config struct {
 	repos    string
 	username string
 
+	hotfixOnly       bool
 	useCommits       bool
 	withReleaseNotes bool
 	withTesting      bool
@@ -40,6 +41,7 @@ func parseFlags() (config Config) {
 	flag.BoolVar(&config.useCommits, "commits", false, "use commits instead of issues")
 	flag.BoolVar(&config.withTesting, "with-testing", false, "include testing sections")
 	flag.BoolVar(&config.withReleaseNotes, "with-release-notes", true, "include release notes sections")
+	flag.BoolVar(&config.hotfixOnly, "hotfix-only", false, "show only hotfix issues")
 	flag.Parse()
 
 	if config.username == "" || config.password == "" || config.base == "" {
