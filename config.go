@@ -14,15 +14,16 @@ type Config struct {
 	repos    string
 	username string
 
-	hotfixOnly       bool
-	useCommits       bool
-	withReleaseNotes bool
-	withTesting      bool
+	hotfixOnly          bool
+	useCommits          bool
+	withNotReleaseNoted bool
+	withReleaseNotes    bool
+	withTesting         bool
 }
 
 func parseFlags() (config Config) {
 	flag.StringVar(&config.base, "since", "", "base branch for comparison (ex: release-20171212014000Z)")
-	flag.StringVar(&config.head, "until", "master", "head branch for comparison")
+	flag.StringVar(&config.head, "until", "", "head branch for comparison")
 	flag.StringVar(&config.password, "password", os.Getenv("GITHUB_TOKEN"), "(REQUIRED) github access token $GITHUB_TOKEN")
 	flag.StringVar(&config.username, "username", os.Getenv("GITHUB_USER"), "(REQUIRED) github username $GITHUB_USER")
 	flag.StringVar(&config.owner, "owner", "sagansystems", "github repo owner")
@@ -41,6 +42,7 @@ func parseFlags() (config Config) {
 	flag.BoolVar(&config.useCommits, "commits", false, "use commits instead of issues")
 	flag.BoolVar(&config.withTesting, "with-testing", false, "include testing sections")
 	flag.BoolVar(&config.withReleaseNotes, "with-release-notes", true, "include release notes sections")
+	flag.BoolVar(&config.withNotReleaseNoted, "with-not-release-noted", false, "include items labeled as 'not release noted'")
 	flag.BoolVar(&config.hotfixOnly, "hotfix-only", false, "show only hotfix issues")
 	flag.Parse()
 

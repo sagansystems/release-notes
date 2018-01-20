@@ -84,10 +84,12 @@ func (app IssuesApp) repoIssues(repo string) []Issue {
 		os.Exit(1)
 	}
 
-	url = fmt.Sprintf("search/issues?q=repo:sagansystems/%s+is:merged+base:%s", repo, app.config.head)
-	if err := app.github.Get(url, &res2); err != nil {
-		fmt.Printf("error fetching issues merged into release branch [%s]: %v", app.config.head, err)
-		os.Exit(1)
+	if app.config.head != "" {
+		url = fmt.Sprintf("search/issues?q=repo:sagansystems/%s+is:merged+base:%s", repo, app.config.head)
+		if err := app.github.Get(url, &res2); err != nil {
+			fmt.Printf("error fetching issues merged into release branch [%s]: %v", app.config.head, err)
+			os.Exit(1)
+		}
 	}
 
 	for _, item := range res.Items {
