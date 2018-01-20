@@ -29,7 +29,7 @@ func main() {
 		app = NewIssuesApp(config, github)
 	}
 
-	filteredIssues := filterIssues(app.Issues(), config.hotfixOnly)
+	filteredIssues := filterIssues(app.Issues(), config.hotfixOnly, config.withNotReleaseNoted)
 	issuesByType := splitIssuesByType(filteredIssues)
 	if printIssues(bugFix, issuesByType[bugFix], config.withReleaseNotes, config.withTesting) {
 		fmt.Println("")
@@ -59,19 +59,24 @@ func printIssues(issueType string, issues []Issue, withReleaseNotes, withTesting
 		if issue.IsHotfix {
 			hotfix = "HOTFIX: "
 		}
+		issueNotReleaseNoted := ""
+		if contains(issue.Labels, notReleaseNoted) {
+			issueNotReleaseNoted = "NOT RELEASE NOTED: "
+		}
 
-		fmt.Printf("<b>%s%s</b><br/><a href=\"%s\">#%s</a>&nbsp;-&nbsp;%s<br/>%s%s<br/>\n",
-			hotfix, issue.Title, issue.URL, issue.Num, issue.Author, releaseNotes, testing)
+		fmt.Printf("<b>%s%s%s</b><br/><a href=\"%s\">#%s</a>&nbsp;-&nbsp;%s<br/>%s%s<br/>\n",
+			hotfix, issueNotReleaseNoted, issue.Title, issue.URL, issue.Num, issue.Author, releaseNotes, testing)
 	}
 
 	return true
 }
 
-func filterIssues(issues []Issue, hotfixOnly bool) []Issue {
+func filterIssues(issues []Issue, hotfixOnly, withNotReleaseNoted bool) []Issue {
 	var filteredIssues []Issue
 
 	for _, issue := range issues {
-		if !hotfixOnly || issue.IsHotfix {
+		releaseNoted := !contains(issue.Labels, notReleaseNoted)
+		if (!hotfixOnly || issue.IsHotfix) && (releaseNoted || withNotReleaseNoted) {
 			filteredIssues = append(filteredIssues, issue)
 		}
 	}
