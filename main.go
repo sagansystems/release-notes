@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -29,7 +30,7 @@ func main() {
 		app = NewIssuesApp(config, github)
 	}
 
-	filteredIssues := filterIssues(app.Issues(), config.hotfixOnly, config.withNotReleaseNoted)
+	filteredIssues := filterIssues(app.Issues(), config.hotfixOnly, config.withInternal)
 	issuesByType := splitIssuesByType(filteredIssues)
 	if printIssues(bugFix, issuesByType[bugFix], config.withReleaseNotes, config.withTesting) {
 		fmt.Println("")
@@ -45,15 +46,17 @@ func printIssues(issueType string, issues []Issue, withReleaseNotes, withTesting
 		return false
 	}
 
+	sort.Sort(IssuesByAuthorAndInternal(issues))
+
 	fmt.Printf("<h2>%s</h2>\n", strings.ToUpper(typeToText[issueType]))
 	for _, issue := range issues {
 		releaseNotes := ""
 		if withReleaseNotes && issue.ReleaseNotes != "" {
-			releaseNotes = "<i>Release Notes:</i><br/><pre>" + issue.ReleaseNotes + "</pre><br/>"
+			releaseNotes = "<i>Release Notes:</i><br/>" + nlToBr(issue.ReleaseNotes) + "<br/>"
 		}
 		testing := ""
 		if withTesting && issue.Testing != "" {
-			testing = "<i>Testing:</i><br/><pre>" + issue.Testing + "</pre><br/>"
+			testing = "<i>Testing:</i><br/>" + nlToBr(issue.Testing) + "<br/>"
 		}
 		hotfix := ""
 		if issue.IsHotfix {
@@ -71,12 +74,16 @@ func printIssues(issueType string, issues []Issue, withReleaseNotes, withTesting
 	return true
 }
 
-func filterIssues(issues []Issue, hotfixOnly, withNotReleaseNoted bool) []Issue {
+func nlToBr(str string) string {
+	return strings.Replace(str, "\n", "<br>", -1)
+}
+
+func filterIssues(issues []Issue, hotfixOnly, withInternal bool) []Issue {
 	var filteredIssues []Issue
 
 	for _, issue := range issues {
 		releaseNoted := !contains(issue.Labels, notReleaseNoted)
-		if (!hotfixOnly || issue.IsHotfix) && (releaseNoted || withNotReleaseNoted) {
+		if (!hotfixOnly || issue.IsHotfix) && (releaseNoted || withInternal) {
 			filteredIssues = append(filteredIssues, issue)
 		}
 	}
