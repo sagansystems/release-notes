@@ -52,11 +52,11 @@ func printIssues(issueType string, issues []Issue, withReleaseNotes, withTesting
 	for _, issue := range issues {
 		releaseNotes := ""
 		if withReleaseNotes && issue.ReleaseNotes != "" {
-			releaseNotes = "<i>Release Notes:</i><br/><pre>" + issue.ReleaseNotes + "</pre><br/>"
+			releaseNotes = "<i>Release Notes:</i><br/>" + nlToBr(issue.ReleaseNotes) + "<br/>"
 		}
 		testing := ""
 		if withTesting && issue.Testing != "" {
-			testing = "<i>Testing:</i><br/><pre>" + issue.Testing + "</pre><br/>"
+			testing = "<i>Testing:</i><br/>" + nlToBr(issue.Testing) + "<br/>"
 		}
 		hotfix := ""
 		if issue.IsHotfix {
@@ -72,6 +72,10 @@ func printIssues(issueType string, issues []Issue, withReleaseNotes, withTesting
 	}
 
 	return true
+}
+
+func nlToBr(str string) string {
+	return strings.Replace(str, "\n", "<br>", -1)
 }
 
 func filterIssues(issues []Issue, hotfixOnly, withInternal bool) []Issue {
