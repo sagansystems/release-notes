@@ -46,7 +46,7 @@ func printIssues(issueType string, issues []Issue, withReleaseNotes, withTesting
 		return false
 	}
 
-	sort.Sort(IssuesByAuthor(issues))
+	sort.Sort(IssuesByAuthorAndInternal(issues))
 
 	fmt.Printf("<h2>%s</h2>\n", strings.ToUpper(typeToText[issueType]))
 	for _, issue := range issues {
