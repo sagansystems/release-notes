@@ -14,11 +14,11 @@ type Config struct {
 	repos    string
 	username string
 
-	hotfixOnly          bool
-	useCommits          bool
-	withNotReleaseNoted bool
-	withReleaseNotes    bool
-	withTesting         bool
+	hotfixOnly       bool
+	useCommits       bool
+	withInternal     bool
+	withReleaseNotes bool
+	withTesting      bool
 }
 
 func parseFlags() (config Config) {
@@ -42,7 +42,7 @@ func parseFlags() (config Config) {
 	flag.BoolVar(&config.useCommits, "commits", false, "use commits instead of issues")
 	flag.BoolVar(&config.withTesting, "with-testing", false, "include testing sections")
 	flag.BoolVar(&config.withReleaseNotes, "with-release-notes", true, "include release notes sections")
-	flag.BoolVar(&config.withNotReleaseNoted, "with-not-release-noted", false, "include items labeled as 'not release noted'")
+	flag.BoolVar(&config.withInternal, "with-internal", true, "include items labeled as 'not release noted'")
 	flag.BoolVar(&config.hotfixOnly, "hotfix-only", false, "show only hotfix issues")
 	flag.Parse()
 
