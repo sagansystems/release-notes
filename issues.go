@@ -44,7 +44,7 @@ type Item struct {
 	} `json:"labels"`
 }
 
-func (i Item) toIssue(repo string, isHotfix bool) Issue {
+func (i Item) toIssue(repo string, isHotfix bool, isMerged bool) Issue {
 	var labels []string
 	for _, label := range i.Labels {
 		labels = append(labels, label.Name)
@@ -59,6 +59,7 @@ func (i Item) toIssue(repo string, isHotfix bool) Issue {
 		ReleaseNotes: strings.TrimSpace(getReleaseNotes(i.Body)),
 		Testing:      strings.TrimSpace(getTesting(i.Body)),
 		IsHotfix:     isHotfix,
+		IsMerged:     isMerged,
 	}
 }
 
@@ -67,36 +68,56 @@ type Items []Item
 func (app IssuesApp) repoIssues(repo string) []Issue {
 	issues := []Issue{}
 
-	var res struct {
+	type Response struct {
 		Items Items `json:"items"`
 	}
 
-	var res2 struct {
-		Items Items `json:"items"`
-	}
+	var (
+		resMergedMaster  Response
+		resMergedRelease Response
+		resOpenMaster    Response
+		resOpenRelease   Response
+	)
 
 	since := releaseToTimestamp(app.config.base)
 	until := releaseToTimestamp(app.config.head)
 
 	url := fmt.Sprintf("search/issues?q=repo:sagansystems/%s+is:merged+closed:%s..%s+base:master", repo, since, until)
-	if err := app.github.Get(url, &res); err != nil {
+	if err := app.github.Get(url, &resMergedMaster); err != nil {
 		fmt.Printf("error fetching issues merged into master: %v", err)
 		os.Exit(1)
 	}
 
 	if app.config.head != "" {
 		url = fmt.Sprintf("search/issues?q=repo:sagansystems/%s+is:merged+base:%s", repo, app.config.head)
-		if err := app.github.Get(url, &res2); err != nil {
+		if err := app.github.Get(url, &resMergedRelease); err != nil {
 			fmt.Printf("error fetching issues merged into release branch [%s]: %v", app.config.head, err)
+			os.Exit(1)
+		}
+		url = fmt.Sprintf("search/issues?q=repo:sagansystems/%s+is:open+base:%s", repo, app.config.head)
+		if err := app.github.Get(url, &resOpenRelease); err != nil {
+			fmt.Printf("error fetching issues merged into master: %v", err)
 			os.Exit(1)
 		}
 	}
 
-	for _, item := range res.Items {
-		issues = append(issues, item.toIssue(repo, false))
+	url = fmt.Sprintf("search/issues?q=repo:sagansystems/%s+is:open+base:master", repo)
+	if err := app.github.Get(url, &resOpenMaster); err != nil {
+		fmt.Printf("error fetching issues merged into master: %v", err)
+		os.Exit(1)
 	}
-	for _, item := range res2.Items {
-		issues = append(issues, item.toIssue(repo, true))
+
+	for _, item := range resMergedMaster.Items {
+		issues = append(issues, item.toIssue(repo, false, true))
+	}
+	for _, item := range resMergedRelease.Items {
+		issues = append(issues, item.toIssue(repo, true, true))
+	}
+	for _, item := range resOpenMaster.Items {
+		issues = append(issues, item.toIssue(repo, false, false))
+	}
+	for _, item := range resOpenRelease.Items {
+		issues = append(issues, item.toIssue(repo, true, false))
 	}
 
 	return issues
