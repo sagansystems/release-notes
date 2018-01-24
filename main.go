@@ -20,6 +20,12 @@ var typeToText = map[string]string{
 	other:   "Untagged",
 }
 
+const (
+	merged        = ""
+	pendingHotfix = "Pending Hotfix"
+	upcoming      = "Future"
+)
+
 func main() {
 	config := parseFlags()
 	github := NewGithubClient(config.username, config.password)
@@ -49,6 +55,30 @@ func printIssues(issueType string, issues []Issue, withReleaseNotes, withTesting
 	sort.Sort(IssuesByAuthorAndInternal(issues))
 
 	fmt.Printf("<h2>%s</h2>\n", strings.ToUpper(typeToText[issueType]))
+
+	issuesByCategory := splitIssuesByCategory(issues)
+
+	printIssuesCategory(merged, issuesByCategory[merged], withReleaseNotes, withTesting)
+	if printIssuesCategory(pendingHotfix, issuesByCategory[pendingHotfix], withReleaseNotes, withTesting) {
+		fmt.Println("")
+	}
+	filteredPending := filterIssues(issuesByCategory[upcoming], false, false)
+	if printIssuesCategory(upcoming, filteredPending, withReleaseNotes, withTesting) {
+		fmt.Println("")
+	}
+
+	return true
+}
+
+func printIssuesCategory(category string, issues []Issue, withReleaseNotes, withTesting bool) bool {
+	if len(issues) == 0 {
+		return false
+	}
+
+	if category != "" {
+		fmt.Printf("<h3>%s</h3>\n", category)
+	}
+
 	for _, issue := range issues {
 		releaseNotes := ""
 		if withReleaseNotes && issue.ReleaseNotes != "" {
@@ -102,6 +132,27 @@ func splitIssuesByType(issues []Issue) map[string][]Issue {
 	return issuesByType
 }
 
+func splitIssuesByCategory(issues []Issue) map[string][]Issue {
+	issuesByCategory := map[string][]Issue{}
+
+	for _, issue := range issues {
+		category := issueCategory(issue)
+		issuesByCategory[category] = append(issuesByCategory[category], issue)
+	}
+
+	return issuesByCategory
+}
+
+func issueCategory(issue Issue) string {
+	if issue.IsHotfix && !issue.IsMerged {
+		return pendingHotfix
+	}
+	if issue.IsMerged {
+		return merged
+	}
+	return upcoming
+}
+
 func printSeparator(str string) {
 	if len(str) == 0 {
 		return
@@ -149,4 +200,5 @@ type Issue struct {
 	ReleaseNotes string
 	Testing      string
 	IsHotfix     bool
+	IsMerged     bool
 }
