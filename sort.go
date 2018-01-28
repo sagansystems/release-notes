@@ -9,10 +9,10 @@ func (iba IssuesByAuthorAndInternal) Len() int {
 }
 
 func (iba IssuesByAuthorAndInternal) Less(i, j int) bool {
-	if contains(iba[i].Labels, notReleaseNoted) && !contains(iba[j].Labels, notReleaseNoted) {
+	if contains(iba[i].Labels, labelNotReleaseNoted) && !contains(iba[j].Labels, labelNotReleaseNoted) {
 		return false
 	}
-	if !contains(iba[i].Labels, notReleaseNoted) && contains(iba[j].Labels, notReleaseNoted) {
+	if !contains(iba[i].Labels, labelNotReleaseNoted) && contains(iba[j].Labels, labelNotReleaseNoted) {
 		return true
 	}
 	return strings.Compare(iba[i].Author, iba[j].Author) == -1
