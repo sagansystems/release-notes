@@ -82,11 +82,11 @@ func printIssuesCategory(category string, issues []Issue, withReleaseNotes, with
 	for _, issue := range issues {
 		releaseNotes := ""
 		if withReleaseNotes && issue.ReleaseNotes != "" {
-			releaseNotes = "<i>Release Notes:</i><br/>" + nlToBr(issue.ReleaseNotes) + "<br/>"
+			releaseNotes = nlToBr(issue.ReleaseNotes) + "<br/>"
 		}
 		testing := ""
 		if withTesting && issue.Testing != "" {
-			testing = "<i>Testing:</i><br/>" + nlToBr(issue.Testing) + "<br/>"
+			testing = nlToBr(issue.Testing) + "<br/>"
 		}
 		hotfix := ""
 		if issue.IsHotfix {
