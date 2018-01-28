@@ -56,6 +56,7 @@ func main() {
 
 	filteredIssues := filterIssues(app.Issues(), config.hotfixOnly, config.withInternal)
 	issuesByCategory := splitIssuesByCategory(filteredIssues)
+
 	fmt.Println("<!DOCTYPE html>")
 	fmt.Println("<html>")
 	fmt.Println("<body>")
@@ -92,10 +93,6 @@ func printIssues(label string, issues []Issue, withReleaseNotes, withTesting boo
 	}
 
 	return true
-}
-
-func nlToBr(str string) string {
-	return strings.Replace(str, "\n", "<br>", -1)
 }
 
 func filterIssues(issues []Issue, hotfixOnly, withInternal bool) []Issue {
@@ -155,6 +152,10 @@ func contains(list []string, v Label) bool {
 		}
 	}
 	return false
+}
+
+func nlToBr(str string) string {
+	return strings.Replace(str, "\n", "<br>", -1)
 }
 
 type App interface {
