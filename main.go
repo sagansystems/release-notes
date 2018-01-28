@@ -6,25 +6,43 @@ import (
 	"strings"
 )
 
-const notReleaseNoted = "not release noted"
+type Label string
 
 const (
-	bugFix  = "bug"
-	feature = "enhancement"
-	other   = "other"
+	labelBug             = Label("bug")
+	labelEnhancement     = Label("enhancement")
+	labelNotReleaseNoted = Label("not release noted")
 )
 
-var typeToText = map[string]string{
-	bugFix:  "Bug Fixes",
-	feature: "Features",
-	other:   "Untagged",
+type Category string
+
+const (
+	categoryBugFix        = Category("bug")
+	categoryEnhancement   = Category("enhancement")
+	categoryUntagged      = Category("untagged")
+	categoryPendingHotfix = Category("pendingHotfix")
+	categoryUpcoming      = Category("upcoming")
+	categoryInternal      = Category("internal")
+	categoryOmitted       = Category("omitted")
+)
+
+var categoryToText = map[Category]string{
+	categoryEnhancement:   "Enhancements",
+	categoryBugFix:        "Bug Fixes",
+	categoryUntagged:      "Untagged",
+	categoryPendingHotfix: "Pending Hotfixes",
+	categoryUpcoming:      "Upcoming",
+	categoryInternal:      "Internal",
 }
 
-const (
-	merged        = ""
-	pendingHotfix = "Pending Hotfix"
-	upcoming      = "Future"
-)
+var outputCategories = []Category{
+	categoryEnhancement,
+	categoryBugFix,
+	categoryUntagged,
+	categoryPendingHotfix,
+	categoryUpcoming,
+	categoryInternal,
+}
 
 func main() {
 	config := parseFlags()
@@ -37,82 +55,51 @@ func main() {
 	}
 
 	filteredIssues := filterIssues(app.Issues(), config.hotfixOnly, config.withInternal)
-	issuesByType := splitIssuesByType(filteredIssues)
-	if printIssues(bugFix, issuesByType[bugFix], config.withReleaseNotes, config.withTesting) {
-		fmt.Println("")
+	issuesByCategory := splitIssuesByCategory(filteredIssues)
+
+	fmt.Println("<!DOCTYPE html>")
+	fmt.Println("<html>")
+	fmt.Println("<body>")
+	for _, category := range outputCategories {
+		printIssues(categoryToText[category], issuesByCategory[category], config.withReleaseNotes, config.withTesting)
 	}
-	if printIssues(feature, issuesByType[feature], config.withReleaseNotes, config.withTesting) {
-		fmt.Println("")
-	}
-	printIssues(other, issuesByType[other], config.withReleaseNotes, config.withTesting)
+	fmt.Println("</body>")
+	fmt.Println("</html>")
 }
 
-func printIssues(issueType string, issues []Issue, withReleaseNotes, withTesting bool) bool {
+func printIssues(label string, issues []Issue, withReleaseNotes, withTesting bool) bool {
 	if len(issues) == 0 {
 		return false
 	}
 
 	sort.Sort(IssuesByAuthorAndInternal(issues))
 
-	fmt.Printf("<h2>%s</h2>\n", strings.ToUpper(typeToText[issueType]))
-
-	issuesByCategory := splitIssuesByCategory(issues)
-
-	printIssuesCategory(merged, issuesByCategory[merged], withReleaseNotes, withTesting)
-	if printIssuesCategory(pendingHotfix, issuesByCategory[pendingHotfix], withReleaseNotes, withTesting) {
-		fmt.Println("")
-	}
-	filteredPending := filterIssues(issuesByCategory[upcoming], false, false)
-	if printIssuesCategory(upcoming, filteredPending, withReleaseNotes, withTesting) {
-		fmt.Println("")
-	}
-
-	return true
-}
-
-func printIssuesCategory(category string, issues []Issue, withReleaseNotes, withTesting bool) bool {
-	if len(issues) == 0 {
-		return false
-	}
-
-	if category != "" {
-		fmt.Printf("<h3>%s</h3>\n", category)
+	if label != "" {
+		fmt.Printf("<h3>%s</h3>\n", label)
 	}
 
 	for _, issue := range issues {
 		releaseNotes := ""
 		if withReleaseNotes && issue.ReleaseNotes != "" {
-			releaseNotes = "<i>Release Notes:</i><br/>" + nlToBr(issue.ReleaseNotes) + "<br/>"
+			releaseNotes = nlToBr(issue.ReleaseNotes) + "<br/>"
 		}
 		testing := ""
 		if withTesting && issue.Testing != "" {
-			testing = "<i>Testing:</i><br/>" + nlToBr(issue.Testing) + "<br/>"
-		}
-		hotfix := ""
-		if issue.IsHotfix {
-			hotfix = "HOTFIX: "
-		}
-		issueNotReleaseNoted := ""
-		if contains(issue.Labels, notReleaseNoted) {
-			issueNotReleaseNoted = "NOT RELEASE NOTED: "
+			testing = nlToBr(issue.Testing) + "<br/>"
 		}
 
-		fmt.Printf("<b>%s%s%s</b><br/><a href=\"%s\">#%s</a>&nbsp;-&nbsp;%s<br/>%s%s<br/>\n",
-			hotfix, issueNotReleaseNoted, issue.Title, issue.URL, issue.Num, issue.Author, releaseNotes, testing)
+		fmt.Printf("<b>%s</b>&nbsp;-&nbsp;<a href=\"%s\">#%s</a>&nbsp;-&nbsp;%s<br/>%s%s<br/>\n",
+			issue.Title, issue.URL, issue.Num, issue.Author, releaseNotes, testing)
 	}
 
 	return true
-}
-
-func nlToBr(str string) string {
-	return strings.Replace(str, "\n", "<br>", -1)
 }
 
 func filterIssues(issues []Issue, hotfixOnly, withInternal bool) []Issue {
 	var filteredIssues []Issue
 
 	for _, issue := range issues {
-		releaseNoted := !contains(issue.Labels, notReleaseNoted)
+		releaseNoted := !contains(issue.Labels, labelNotReleaseNoted)
 		if (!hotfixOnly || issue.IsHotfix) && (releaseNoted || withInternal) {
 			filteredIssues = append(filteredIssues, issue)
 		}
@@ -121,19 +108,8 @@ func filterIssues(issues []Issue, hotfixOnly, withInternal bool) []Issue {
 	return filteredIssues
 }
 
-func splitIssuesByType(issues []Issue) map[string][]Issue {
-	issuesByType := map[string][]Issue{}
-
-	for _, issue := range issues {
-		issueType := labelsToType(issue.Labels)
-		issuesByType[issueType] = append(issuesByType[issueType], issue)
-	}
-
-	return issuesByType
-}
-
-func splitIssuesByCategory(issues []Issue) map[string][]Issue {
-	issuesByCategory := map[string][]Issue{}
+func splitIssuesByCategory(issues []Issue) map[Category][]Issue {
+	issuesByCategory := map[Category][]Issue{}
 
 	for _, issue := range issues {
 		category := issueCategory(issue)
@@ -143,43 +119,43 @@ func splitIssuesByCategory(issues []Issue) map[string][]Issue {
 	return issuesByCategory
 }
 
-func issueCategory(issue Issue) string {
-	if issue.IsHotfix && !issue.IsMerged {
-		return pendingHotfix
-	}
+func issueCategory(issue Issue) Category {
+	isBugFix := contains(issue.Labels, labelBug)
+	isEnhancement := contains(issue.Labels, labelEnhancement)
+	isReleaseNoted := !contains(issue.Labels, labelNotReleaseNoted)
+
 	if issue.IsMerged {
-		return merged
+		if contains(issue.Labels, labelNotReleaseNoted) {
+			return categoryInternal
+		}
+		if isBugFix {
+			return categoryBugFix
+		}
+		if isEnhancement {
+			return categoryEnhancement
+		}
+		return categoryUntagged
 	}
-	return upcoming
+	if issue.IsHotfix {
+		return categoryPendingHotfix
+	}
+	if isReleaseNoted {
+		return categoryUpcoming
+	}
+	return categoryOmitted
 }
 
-func printSeparator(str string) {
-	if len(str) == 0 {
-		return
-	}
-	for i := 0; i < len(str); i++ {
-		fmt.Printf("-")
-	}
-	fmt.Printf("\n")
-}
-
-func contains(list []string, v string) bool {
+func contains(list []string, v Label) bool {
 	for _, l := range list {
-		if l == v {
+		if l == string(v) {
 			return true
 		}
 	}
 	return false
 }
 
-func labelsToType(labels []string) string {
-	if contains(labels, bugFix) {
-		return bugFix
-	}
-	if contains(labels, feature) {
-		return feature
-	}
-	return other
+func nlToBr(str string) string {
+	return strings.Replace(str, "\n", "<br>", -1)
 }
 
 type App interface {
