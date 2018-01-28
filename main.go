@@ -56,9 +56,14 @@ func main() {
 
 	filteredIssues := filterIssues(app.Issues(), config.hotfixOnly, config.withInternal)
 	issuesByCategory := splitIssuesByCategory(filteredIssues)
+	fmt.Println("<!DOCTYPE html>")
+	fmt.Println("<html>")
+	fmt.Println("<body>")
 	for _, category := range outputCategories {
 		printIssues(categoryToText[category], issuesByCategory[category], config.withReleaseNotes, config.withTesting)
 	}
+	fmt.Println("</body>")
+	fmt.Println("</html>")
 }
 
 func printIssues(label string, issues []Issue, withReleaseNotes, withTesting bool) bool {
