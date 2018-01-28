@@ -81,17 +81,9 @@ func printIssues(label string, issues []Issue, withReleaseNotes, withTesting boo
 		if withTesting && issue.Testing != "" {
 			testing = nlToBr(issue.Testing) + "<br/>"
 		}
-		hotfix := ""
-		if issue.IsHotfix {
-			hotfix = "HOTFIX: "
-		}
-		issueNotReleaseNoted := ""
-		if contains(issue.Labels, labelNotReleaseNoted) {
-			issueNotReleaseNoted = "INTERNAL: "
-		}
 
-		fmt.Printf("<b>%s%s%s</b>&nbsp;-&nbsp;<a href=\"%s\">#%s</a>&nbsp;-&nbsp;%s<br/>%s%s<br/>\n",
-			hotfix, issueNotReleaseNoted, issue.Title, issue.URL, issue.Num, issue.Author, releaseNotes, testing)
+		fmt.Printf("<b>%s</b>&nbsp;-&nbsp;<a href=\"%s\">#%s</a>&nbsp;-&nbsp;%s<br/>%s%s<br/>\n",
+			issue.Title, issue.URL, issue.Num, issue.Author, releaseNotes, testing)
 	}
 
 	return true
