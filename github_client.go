@@ -29,6 +29,10 @@ func (client Github) Get(path string, v interface{}) error {
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf(resp.Status)
+	}
+
 	if err != nil {
 		return err
 	}
