@@ -13,7 +13,7 @@ pipeline {
         booleanParam(defaultValue: false, description: 'use commits instead of issues', name: 'commits')
         booleanParam(defaultValue: false, description: 'show only hotfix issues', name: 'hotfixOnly')
         string(defaultValue: '', description: 'base branch for comparison (ex: release-20171212014000Z)', name: 'since')
-        string(defaultValue: '', description: 'head branch for comparison', name: 'until')
+        string(defaultValue: '', description: 'head branch for comparison, set to "" for empty', name: 'until')
         booleanParam(defaultValue: true, description: 'include items labeled as "not release noted"', name: 'withInternal')
         booleanParam(defaultValue: true, description: 'include release notes sections', name: 'withReleaseNotes')
         booleanParam(defaultValue: false, description: 'include testing sections', name: 'withTesting')
