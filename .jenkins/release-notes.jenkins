@@ -36,7 +36,7 @@ pipeline {
             }
 
             steps {
-                sh '/release-notes -since ${params.since} -until ${params.until} -with-testing=${params.with-testing} -with-release-notes=${with-release-notes} > output.html'
+                sh 'release-notes -since ${params.since} -until ${params.until} -with-testing=${params.with-testing} -with-release-notes=${with-release-notes} > output.html'
             }
         }
     }
