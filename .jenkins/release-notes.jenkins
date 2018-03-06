@@ -1,0 +1,49 @@
+pipeline {
+    agent any
+    options {
+        timestamps()
+        timeout(time: 2, unit: 'HOURS')
+        buildDiscarder(logRotator(numToKeepStr:'10'))
+    }
+    environment {
+        JOB_USER = getJobUsername()
+    }
+
+    parameters {
+        booleanParam(defaultValue: false, description: 'use commits instead of issues', name: 'commits')
+        booleanParam(defaultValue: false, description: 'show only hotfix issues', name: 'hotfix-only')
+        string(defaultValue: '', description: 'base branch for comparison (ex: release-20171212014000Z)', name: 'since')
+        string(defaultValue: '', description: 'head branch for comparison', name: 'until')
+        booleanParam(defaultValue: true, description: 'include items labeled as "not release noted"', name: 'with-internal')
+        booleanParam(defaultValue: true, description: 'include release notes sections', name: 'with-release-notes')
+        booleanParam(defaultValue: false, description: 'include testing sections', name: 'with-testing')
+    }
+
+    stages {
+        stage('Generate release notes') {
+            agent { dockerfile true }
+
+            environment {
+                GITHUB_TOKEN = credentials('githubToken')
+                GITHUB_USER = 'saganbot'
+            }
+
+            post {
+                always {
+                    archiveArtifacts allowEmptyArchive: true, artifacts: '*.html'
+                    cleanWs()
+                }
+            }
+
+            steps {
+                sh '/release-notes -since ${params.since} -until ${params.until} -with-testing=${params.with-testing} -with-release-notes=${with-release-notes} > output.html'
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+    }
+}
