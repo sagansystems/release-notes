@@ -14,9 +14,9 @@ pipeline {
         booleanParam(defaultValue: false, description: 'show only hotfix issues', name: 'hotfix-only')
         string(defaultValue: '', description: 'base branch for comparison (ex: release-20171212014000Z)', name: 'since')
         string(defaultValue: '', description: 'head branch for comparison', name: 'until')
-        booleanParam(defaultValue: true, description: 'include items labeled as "not release noted"', name: 'with-internal')
-        booleanParam(defaultValue: true, description: 'include release notes sections', name: 'with-release-notes')
-        booleanParam(defaultValue: false, description: 'include testing sections', name: 'with-testing')
+        booleanParam(defaultValue: true, description: 'include items labeled as "not release noted"', name: 'internal')
+        booleanParam(defaultValue: true, description: 'include release notes sections', name: 'release-notes')
+        booleanParam(defaultValue: false, description: 'include testing sections', name: 'testing')
     }
 
     stages {
@@ -36,8 +36,8 @@ pipeline {
             }
 
             steps {
-                sh "release-notes -since ${params.since} -until ${params.until} -with-testing=${params.with-testing} -with-release-notes=${params.with-release-notes} > output.html"
-                sh "echo release-notes -since ${params.since} -until ${params.until} -with-testing=${params.with-testing} -with-release-notes=${params.with-release-notes}"
+                sh "release-notes -since ${params.since} -until ${params.until} -with-testing=${params.testing} -with-release-notes=${params.release-notes} > output.html"
+                sh "echo release-notes -since ${params.since} -until ${params.until} -with-testing=${params.testing} -with-release-notes=${params.release-notes}"
             }
         }
     }
