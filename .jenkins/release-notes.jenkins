@@ -10,17 +10,17 @@ pipeline {
     }
 
     parameters {
-        booleanParam(defaultValue: false, description: 'use commits instead of issues', name: 'commits')
-        booleanParam(defaultValue: false, description: 'show only hotfix issues', name: 'hotfixOnly')
         string(defaultValue: '', description: 'base branch for comparison (ex: release-20171212014000Z)', name: 'since')
         string(defaultValue: '', description: 'head branch for comparison, set to "" for empty', name: 'until')
         booleanParam(defaultValue: true, description: 'include items labeled as "not release noted"', name: 'withInternal')
         booleanParam(defaultValue: true, description: 'include release notes sections', name: 'withReleaseNotes')
         booleanParam(defaultValue: false, description: 'include testing sections', name: 'withTesting')
+        booleanParam(defaultValue: false, description: 'use commits instead of issues', name: 'commits')
+        booleanParam(defaultValue: false, description: 'show only hotfix issues', name: 'hotfixOnly')
     }
 
     stages {
-        stage('Generate release notes') {
+        stage('Generate release notes to "output.html" artifact') {
             agent { dockerfile true }
 
             environment {
@@ -31,13 +31,11 @@ pipeline {
             post {
                 always {
                     archiveArtifacts allowEmptyArchive: true, artifacts: '*.html'
-                    cleanWs()
                 }
             }
 
             steps {
-                sh "/release-notes -since ${params.since} -until ${params.until} -with-testing=${params.withTesting} -with-release-notes=${params.withReleaseNotes} > output.html"
-                sh "echo release-notes -since ${params.since} -until ${params.until} -with-testing=${params.withTesting} -withReleaseNotes=${params.withReleaseNotes}"
+                sh "/release-notes -since ${params.since} -until ${params.until} -with-testing=${params.withTesting} -with-release-notes=${params.withReleaseNotes} -commits=${params.commits} -hotfix-only=${params.hotfixOnly} -with-internal=${params.withInternal} > output.html"
             }
         }
     }
