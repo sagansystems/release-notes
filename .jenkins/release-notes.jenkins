@@ -37,6 +37,7 @@ pipeline {
 
             steps {
                 sh "release-notes -since ${params.since} -until ${params.until} -with-testing=${params.with-testing} -with-release-notes=${params.with-release-notes} > output.html"
+                sh "echo release-notes -since ${params.since} -until ${params.until} -with-testing=${params.with-testing} -with-release-notes=${params.with-release-notes}"
             }
         }
     }
