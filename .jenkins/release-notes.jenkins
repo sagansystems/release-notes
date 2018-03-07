@@ -1,0 +1,48 @@
+pipeline {
+    agent any
+    options {
+        timestamps()
+        timeout(time: 2, unit: 'HOURS')
+        buildDiscarder(logRotator(numToKeepStr:'10'))
+    }
+    environment {
+        JOB_USER = getJobUsername()
+    }
+
+    parameters {
+        string(defaultValue: '', description: 'base branch for comparison (ex: release-20171212014000Z)', name: 'since')
+        string(defaultValue: '', description: 'head branch for comparison, set to "" for empty', name: 'until')
+        booleanParam(defaultValue: true, description: 'include items labeled as "not release noted"', name: 'withInternal')
+        booleanParam(defaultValue: true, description: 'include release notes sections', name: 'withReleaseNotes')
+        booleanParam(defaultValue: false, description: 'include testing sections', name: 'withTesting')
+        booleanParam(defaultValue: false, description: 'use commits instead of issues', name: 'commits')
+        booleanParam(defaultValue: false, description: 'show only hotfix issues', name: 'hotfixOnly')
+    }
+
+    stages {
+        stage('Generate release notes to "output.html" artifact') {
+            agent { dockerfile true }
+
+            environment {
+                GITHUB_TOKEN = credentials('githubToken')
+                GITHUB_USER = 'saganbot'
+            }
+
+            post {
+                always {
+                    archiveArtifacts allowEmptyArchive: true, artifacts: '*.html'
+                }
+            }
+
+            steps {
+                sh "/release-notes -since ${params.since} -until ${params.until} -with-testing=${params.withTesting} -with-release-notes=${params.withReleaseNotes} -commits=${params.commits} -hotfix-only=${params.hotfixOnly} -with-internal=${params.withInternal} > output.html"
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+    }
+}
