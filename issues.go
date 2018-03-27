@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+const ITEMS_PER_PAGE = 100
+
 type IssuesApp struct {
 	config Config
 	github GithubGateway
@@ -96,59 +98,68 @@ type Items []Item
 func (app IssuesApp) repoIssues(repo string) []Issue {
 	issues := []Issue{}
 
-	type Response struct {
-		Items Items `json:"items"`
-	}
-
-	var (
-		resMergedMaster  Response
-		resMergedRelease Response
-		resOpenMaster    Response
-		resOpenRelease   Response
-	)
-
 	since := releaseToTimestamp(app.config.base)
 	until := releaseToTimestamp(app.config.head)
 
-	url := fmt.Sprintf("search/issues?q=repo:sagansystems/%s+is:merged+closed:%s..%s+base:master", repo, since, until)
-	if err := app.github.Get(url, &resMergedMaster); err != nil {
+	query := fmt.Sprintf("search/issues?q=repo:sagansystems/%s+is:merged+merged:%s..%s+base:master", repo, since, until)
+	if addIssues, err := app.getIssuesForQuery(query, repo, false, true); err != nil {
 		fmt.Printf("error fetching issues merged into master branch of %s: %v", repo, err)
 		os.Exit(1)
+	} else {
+		issues = append(issues, addIssues...)
 	}
 
 	if app.config.head != "" {
-		url = fmt.Sprintf("search/issues?q=repo:sagansystems/%s+is:merged+base:%s", repo, app.config.head)
-		if err := app.github.Get(url, &resMergedRelease); err != nil {
+		query = fmt.Sprintf("search/issues?q=repo:sagansystems/%s+is:merged+base:%s", repo, app.config.head)
+		if addIssues, err := app.getIssuesForQuery(query, repo, true, true); err != nil {
 			fmt.Printf("error fetching issues merged into release branch [%s] of %s: %v", app.config.head, repo, err)
 			os.Exit(1)
+		} else {
+			issues = append(issues, addIssues...)
 		}
-		url = fmt.Sprintf("search/issues?q=repo:sagansystems/%s+is:open+base:%s", repo, app.config.head)
-		if err := app.github.Get(url, &resOpenRelease); err != nil {
+		query = fmt.Sprintf("search/issues?q=repo:sagansystems/%s+is:open+base:%s", repo, app.config.head)
+		if addIssues, err := app.getIssuesForQuery(query, repo, false, false); err != nil {
 			fmt.Printf("error fetching open issues for release branch [%s] of %s : %v", app.config.head, repo, err)
 			os.Exit(1)
+		} else {
+			issues = append(issues, addIssues...)
 		}
 	}
 
-	url = fmt.Sprintf("search/issues?q=repo:sagansystems/%s+is:open+base:master", repo)
-	if err := app.github.Get(url, &resOpenMaster); err != nil {
+	query = fmt.Sprintf("search/issues?q=repo:sagansystems/%s+is:open+base:master", repo)
+	if addIssues, err := app.getIssuesForQuery(query, repo, true, false); err != nil {
 		fmt.Printf("error fetching open issues for master branch of %s: %v", repo, err)
 		os.Exit(1)
-	}
-
-	for _, item := range resMergedMaster.Items {
-		issues = append(issues, item.toIssue(repo, false, true))
-	}
-	for _, item := range resMergedRelease.Items {
-		issues = append(issues, item.toIssue(repo, true, true))
-	}
-	for _, item := range resOpenMaster.Items {
-		issues = append(issues, item.toIssue(repo, false, false))
-	}
-	for _, item := range resOpenRelease.Items {
-		issues = append(issues, item.toIssue(repo, true, false))
+	} else {
+		issues = append(issues, addIssues...)
 	}
 
 	return issues
+}
+
+func (app IssuesApp) getIssuesForQuery(url, repo string, isHotfix, isMerged bool) ([]Issue, error) {
+	type Response struct {
+		TotalCount int   `json:"total_count"`
+		Items      Items `json:"items"`
+	}
+
+	var issues []Issue
+
+	for page := 1; true; page++ {
+		var res Response
+		path := fmt.Sprintf("%s&page=%d&per_page=%d", url, page, ITEMS_PER_PAGE)
+		if err := app.github.Get(path, &res); err != nil {
+			return nil, err
+		}
+		for _, item := range res.Items {
+			issues = append(issues, item.toIssue(repo, isHotfix, isMerged))
+		}
+		if res.TotalCount-ITEMS_PER_PAGE*page <= 0 {
+			break
+		}
+	}
+
+	return issues, nil
 }
 
 const tsRegexp = ".*-(\\d{4})(\\d{2})(\\d{2})(\\d{2})(\\d{2})(\\d{2})Z"
