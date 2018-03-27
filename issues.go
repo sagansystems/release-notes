@@ -41,6 +41,7 @@ func (app IssuesApp) Issues() []Issue {
 		}
 	}
 	if shouldThrottle {
+		fmt.Fprintf(os.Stderr, "\033[2K")
 		fmt.Fprintf(os.Stderr, "\033[1E")
 	}
 
@@ -118,7 +119,7 @@ func (app IssuesApp) repoIssues(repo string) []Issue {
 			issues = append(issues, addIssues...)
 		}
 		query = fmt.Sprintf("search/issues?q=repo:sagansystems/%s+is:open+base:%s", repo, app.config.head)
-		if addIssues, err := app.getIssuesForQuery(query, repo, false, false); err != nil {
+		if addIssues, err := app.getIssuesForQuery(query, repo, true, false); err != nil {
 			fmt.Printf("error fetching open issues for release branch [%s] of %s : %v", app.config.head, repo, err)
 			os.Exit(1)
 		} else {
@@ -127,7 +128,7 @@ func (app IssuesApp) repoIssues(repo string) []Issue {
 	}
 
 	query = fmt.Sprintf("search/issues?q=repo:sagansystems/%s+is:open+base:master", repo)
-	if addIssues, err := app.getIssuesForQuery(query, repo, true, false); err != nil {
+	if addIssues, err := app.getIssuesForQuery(query, repo, false, false); err != nil {
 		fmt.Printf("error fetching open issues for master branch of %s: %v", repo, err)
 		os.Exit(1)
 	} else {
