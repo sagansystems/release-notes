@@ -12,18 +12,20 @@ const (
 	labelBug             = Label("bug")
 	labelEnhancement     = Label("enhancement")
 	labelNotReleaseNoted = Label("not release noted")
+	labelDemo            = Label("demo")
 )
 
 type Category string
 
 const (
 	categoryBugFix        = Category("bug")
+	categoryDemo          = Category("demo")
 	categoryEnhancement   = Category("enhancement")
-	categoryUntagged      = Category("untagged")
-	categoryPendingHotfix = Category("pendingHotfix")
-	categoryUpcoming      = Category("upcoming")
 	categoryInternal      = Category("internal")
 	categoryOmitted       = Category("omitted")
+	categoryPendingHotfix = Category("pendingHotfix")
+	categoryUntagged      = Category("untagged")
+	categoryUpcoming      = Category("upcoming")
 )
 
 var categoryToText = map[Category]string{
@@ -33,6 +35,7 @@ var categoryToText = map[Category]string{
 	categoryPendingHotfix: "Pending Hotfixes",
 	categoryUpcoming:      "Upcoming",
 	categoryInternal:      "Internal",
+	categoryDemo:          "Demo Changes",
 }
 
 var outputCategories = []Category{
@@ -42,6 +45,7 @@ var outputCategories = []Category{
 	categoryPendingHotfix,
 	categoryUpcoming,
 	categoryInternal,
+	categoryDemo,
 }
 
 func main() {
@@ -121,8 +125,13 @@ func splitIssuesByCategory(issues []Issue) map[Category][]Issue {
 
 func issueCategory(issue Issue) Category {
 	isBugFix := contains(issue.Labels, labelBug)
+	isDemoChange := contains(issue.Labels, labelDemo)
 	isEnhancement := contains(issue.Labels, labelEnhancement)
 	isReleaseNoted := !contains(issue.Labels, labelNotReleaseNoted)
+
+	if isDemoChange {
+		return categoryDemo
+	}
 
 	if issue.IsMerged {
 		if contains(issue.Labels, labelNotReleaseNoted) {
