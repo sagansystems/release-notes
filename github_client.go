@@ -1,10 +1,14 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/google/go-github/github"
+	"golang.org/x/oauth2"
 )
 
 type Github struct {
@@ -38,4 +42,13 @@ func (client Github) Get(path string, v interface{}) error {
 	}
 
 	return json.Unmarshal(body, v)
+}
+
+func oauth2Client(token string) github.Client {
+	ctx := context.Background()
+	ts := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: token},
+	)
+	tc := oauth2.NewClient(ctx, ts)
+	return *github.NewClient(tc)
 }

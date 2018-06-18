@@ -50,12 +50,15 @@ var outputCategories = []Category{
 
 func main() {
 	config := parseFlags()
-	github := NewGithubClient(config.username, config.password)
+	githubDirect := NewGithubClient(config.username, config.password)
+	goGithub := oauth2Client(config.password)
+	parseBranchTemplate(config, goGithub)
+
 	var app App
 	if config.useCommits {
-		app = NewCommitApp(config, github)
+		app = NewCommitApp(config, githubDirect)
 	} else {
-		app = NewIssuesApp(config, github)
+		app = NewIssuesApp(config, githubDirect)
 	}
 
 	filteredIssues := filterIssues(app.Issues(), config.hotfixOnly, config.withInternal)

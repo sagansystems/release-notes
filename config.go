@@ -38,6 +38,7 @@ func parseFlags() (config Config) {
 			scoring
 			supernova
 			synthetic
+			burrow
 		`), " "), "github repo names")
 	flag.BoolVar(&config.useCommits, "commits", false, "use commits instead of issues")
 	flag.BoolVar(&config.withTesting, "with-testing", false, "include testing sections")
