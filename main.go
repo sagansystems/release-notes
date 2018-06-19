@@ -52,7 +52,7 @@ func main() {
 	config := parseFlags()
 	githubDirect := NewGithubClient(config.username, config.password)
 	goGithub := oauth2Client(config.password)
-	parseBranchTemplate(config, goGithub)
+	parseBranchTemplate(&config, goGithub)
 
 	var app App
 	if config.useCommits {

@@ -22,8 +22,8 @@ type Config struct {
 }
 
 func parseFlags() (config Config) {
-	flag.StringVar(&config.base, "since", "", "base branch for comparison (ex: release-20171212014000Z)")
-	flag.StringVar(&config.head, "until", "", "head branch for comparison")
+	flag.StringVar(&config.base, "since", "", "base branch for comparison (specific like: release-20171212014000Z, or relative: latest-1)")
+	flag.StringVar(&config.head, "until", "", "head branch for comparison (again, specific or relative like: latest)")
 	flag.StringVar(&config.password, "password", os.Getenv("GITHUB_TOKEN"), "(REQUIRED) github access token $GITHUB_TOKEN")
 	flag.StringVar(&config.username, "username", os.Getenv("GITHUB_USER"), "(REQUIRED) github username $GITHUB_USER")
 	flag.StringVar(&config.owner, "owner", "sagansystems", "github repo owner")
