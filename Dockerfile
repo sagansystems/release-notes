@@ -7,7 +7,7 @@ WORKDIR $PROJECT_DIR
 
 COPY . .
 
-RUN go build -o release-notes
+RUN go test && go build -o release-notes
 
 FROM alpine:3.7
 

@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"html/template"
 	"os"
 	"regexp"
 	"strings"
@@ -175,8 +177,17 @@ func releaseToTimestamp(release string) string {
 	return fmt.Sprintf(timeFmt, matches[1], matches[2], matches[3], matches[4], matches[5], matches[6])
 }
 
+func getSectionRegex(sectionString string) string {
+	const sectionTemplate = "(?:#+\\s*|\\*\\*){{.}}\\s*\\**[\\r\\n]+((?s:.)*?)(?:\\z|\\*\\*|#+|JIRA: \\[)"
+	tmpl := template.New("sectionTemplate")
+	tmpl, _ = tmpl.Parse(sectionTemplate)
+	var tpl bytes.Buffer
+	tmpl.Execute(&tpl, sectionString)
+	return tpl.String()
+}
+
 func getReleaseNotes(description string) string {
-	const notesRegexp = "(?:##+\\s*|\\*\\*)(?i:release\\s*notes)\\**[\\r\\n]+((?s:.)*?)(?:\\z|\\*\\*|##+|JIRA: \\[)"
+	notesRegexp := getSectionRegex("(?i:release\\s*notes)")
 	re := regexp.MustCompile(notesRegexp)
 	matches := re.FindStringSubmatch(description)
 	if len(matches) < 2 {
@@ -187,7 +198,7 @@ func getReleaseNotes(description string) string {
 }
 
 func getTesting(description string) string {
-	const notesRegexp = "(?:##+\\s*|\\*\\*)(?i:testing)\\**[\\r\\n]+((?s:.)*?)(?:\\z|\\*\\*|##+|JIRA: \\[)"
+	notesRegexp := getSectionRegex("(?i:testing)")
 	re := regexp.MustCompile(notesRegexp)
 	matches := re.FindStringSubmatch(description)
 	if len(matches) < 2 {
