@@ -1,4 +1,4 @@
-FROM golang:alpine AS builder
+FROM golang:1.10-alpine3.8 AS builder
 
 ARG gopath="/go"
 ENV GOPATH=${gopath}
@@ -9,7 +9,7 @@ COPY . .
 
 RUN go test && go build -o release-notes
 
-FROM alpine:3.7
+FROM alpine:3.8
 
 ADD entrypoint.sh /
 
