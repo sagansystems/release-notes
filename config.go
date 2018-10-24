@@ -39,6 +39,7 @@ func parseFlags() (config Config) {
 			supernova
 			synthetic
 			burrow
+			elasticsearch-backup
 		`), " "), "github repo names")
 	flag.BoolVar(&config.useCommits, "commits", false, "use commits instead of issues")
 	flag.BoolVar(&config.withTesting, "with-testing", false, "include testing sections")
