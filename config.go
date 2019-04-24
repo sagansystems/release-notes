@@ -40,6 +40,7 @@ func parseFlags() (config Config) {
 			synthetic
 			burrow
 			elasticsearch-backup
+			connector-service
 		`), " "), "github repo names")
 	flag.BoolVar(&config.useCommits, "commits", false, "use commits instead of issues")
 	flag.BoolVar(&config.withTesting, "with-testing", false, "include testing sections")
